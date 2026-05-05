@@ -51,7 +51,7 @@ services:
       db:
         condition: service_healthy
       tailscale:
-        condition: service_healthy
+        condition: service_started
     network_mode: service:tailscale
   
 volumes:
