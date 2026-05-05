@@ -1,4 +1,20 @@
 services:
+  tailscale:
+    image: tailscale/tailscale:latest
+    hostname: tailscale-nginx
+    environment:
+      - TS_AUTHKEY=${SERVICE_TS_AUTH_KEY}
+      - TS_EXTRA_ARGS=--advertise-tags=tag:container
+      - TS_STATE_DIR=/var/lib/tailscale
+      - TS_USERSPACE=false
+    volumes:
+      - ./tailscale-nginx/state:/var/lib/tailscale
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    cap_add:
+      - net_admin
+      - net_raw
+    restart: unless-stopped
   db:
     image: postgres:17-alpine
     environment:
@@ -15,6 +31,9 @@ services:
 
   server:
     build: .
+    depends_on:
+      - tailscale
+    network_mode: service:tailscale
     environment:
       DATABASE_URL: postgres://paperclip:${SERVICE_PASSWORD_POSTGRES}@db:5432/paperclip
       PORT: "3100"
