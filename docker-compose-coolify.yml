@@ -16,6 +16,9 @@ services:
       - net_raw
     restart: unless-stopped
   db:
+    depends_on:
+      - tailscale
+    network_mode: service:tailscale
     image: postgres:17-alpine
     environment:
       POSTGRES_USER: paperclip
@@ -31,9 +34,6 @@ services:
 
   server:
     build: .
-    depends_on:
-      - tailscale
-    network_mode: service:tailscale
     environment:
       DATABASE_URL: postgres://paperclip:${SERVICE_PASSWORD_POSTGRES}@db:5432/paperclip
       PORT: "3100"
@@ -50,7 +50,10 @@ services:
     depends_on:
       db:
         condition: service_healthy
-
+      tailscale:
+        condition: service_healthy
+    network_mode: service:tailscale
+  
 volumes:
   pgdata:
   paperclip-data:
