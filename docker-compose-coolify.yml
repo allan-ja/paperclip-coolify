@@ -1,0 +1,37 @@
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: paperclip
+      POSTGRES_PASSWORD: ${SERVICE_PASSWORD_POSTGRES}
+      POSTGRES_DB: paperclip
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U paperclip -d paperclip"]
+      interval: 2s
+      timeout: 5s
+      retries: 30
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  server:
+    build: .
+    environment:
+      DATABASE_URL: postgres://paperclip:${SERVICE_PASSWORD_POSTGRES}@db:5432/paperclip
+      PORT: "3100"
+      SERVE_UI: "true"
+      PAPERCLIP_DEPLOYMENT_MODE: "authenticated"
+      PAPERCLIP_DEPLOYMENT_EXPOSURE: "public"
+      PAPERCLIP_PUBLIC_URL: "https://${SERVICE_FQDN_SERVER}"
+      BETTER_AUTH_SECRET: "${SERVICE_PASSWORD_64_BETTERAUTH}"
+      PAPERCLIP_AGENT_JWT_SECRET: "${SERVICE_PASSWORD_64_AGENTJWT}"
+      # ANTHROPIC_API_KEY: "${ANTHROPIC_API_KEY:?}"
+      SERVICE_FQDN_SERVER_3100:
+    volumes:
+      - paperclip-data:/paperclip
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  pgdata:
+  paperclip-data:
