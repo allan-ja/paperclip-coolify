@@ -1,20 +1,20 @@
 services:
-  tailscale:
-    image: tailscale/tailscale:latest
-    hostname: paperclip
-    environment:
-      - TS_AUTHKEY=${TS_AUTH_KEY}
-      - TS_EXTRA_ARGS=--advertise-tags=tag:container --allowed-hostname=100.69.35.53
-      - TS_STATE_DIR=/var/lib/tailscale
-      - TS_USERSPACE=false
-    volumes:
-      - ./tailscale-nginx/state:/var/lib/tailscale
-    devices:
-      - /dev/net/tun:/dev/net/tun
-    cap_add:
-      - net_admin
-      - net_raw
-    restart: unless-stopped
+  # tailscale:
+  #   image: tailscale/tailscale:latest
+  #   hostname: paperclip
+  #   environment:
+  #     - TS_AUTHKEY=${TS_AUTH_KEY}
+  #     - TS_EXTRA_ARGS=--advertise-tags=tag:container --allowed-hostname=100.69.35.53
+  #     - TS_STATE_DIR=/var/lib/tailscale
+  #     - TS_USERSPACE=false
+  #   volumes:
+  #     - ./tailscale-nginx/state:/var/lib/tailscale
+  #   devices:
+  #     - /dev/net/tun:/dev/net/tun
+  #   cap_add:
+  #     - net_admin
+  #     - net_raw
+  #   restart: unless-stopped
   db:
     image: postgres:17-alpine
     environment:
@@ -36,21 +36,33 @@ services:
       PORT: "3100"
       SERVE_UI: "true"
       PAPERCLIP_DEPLOYMENT_MODE: "authenticated"
-      PAPERCLIP_DEPLOYMENT_EXPOSURE: "private"
+      PAPERCLIP_DEPLOYMENT_EXPOSURE: "public"
       PAPERCLIP_AUTH_BASE_URL_MODE: "auto"
       HOST: "0.0.0.0"
       BETTER_AUTH_SECRET: "${SERVICE_PASSWORD_64_BETTERAUTH}"
       PAPERCLIP_AGENT_JWT_SECRET: "${SERVICE_PASSWORD_64_AGENTJWT}"
+      PAPERCLIP_LISTEN_PORT: "3100"
+      PAPERCLIP_LISTEN_HOST: "0.0.0.0"
+      PAPERCLIP_MIGRATION_AUTO_APPLY: "true"
+      PAPERCLIP_MIGRATION_PROMPT: "never"
       # ANTHROPIC_API_KEY: "${ANTHROPIC_API_KEY:?}"
       SERVICE_FQDN_SERVER_3100:
+    ports:
+      - "3100"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3100/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
     volumes:
       - paperclip-data:/paperclip
     depends_on:
       db:
         condition: service_healthy
-      tailscale:
-        condition: service_started
-    network_mode: service:tailscale
+    #   tailscale:
+    #     condition: service_started
+    # network_mode: service:tailscale
   
 volumes:
   pgdata:
