@@ -1,7 +1,7 @@
 services:
   tailscale:
     image: tailscale/tailscale:latest
-    hostname: tailscale-nginx
+    hostname: paperclip
     environment:
       - TS_AUTHKEY=${TS_AUTH_KEY}
       - TS_EXTRA_ARGS=--advertise-tags=tag:container
@@ -16,9 +16,6 @@ services:
       - net_raw
     restart: unless-stopped
   db:
-    depends_on:
-      - tailscale
-    network_mode: service:tailscale
     image: postgres:17-alpine
     environment:
       POSTGRES_USER: paperclip
