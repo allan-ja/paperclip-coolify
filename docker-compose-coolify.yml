@@ -33,20 +33,18 @@ services:
     build: .
     environment:
       DATABASE_URL: postgres://paperclip:${SERVICE_PASSWORD_POSTGRES}@db:5432/paperclip
+      HOST: "0.0.0.0"
       PORT: "3100"
       SERVE_UI: "true"
       PAPERCLIP_DEPLOYMENT_MODE: "authenticated"
-      PAPERCLIP_DEPLOYMENT_EXPOSURE: "public"
-      PAPERCLIP_PUBLIC_URL: "https://${SERVICE_FQDN_SERVER}"
-      BETTER_AUTH_SECRET: "${SERVICE_PASSWORD_64_BETTERAUTH}"
+      PAPERCLIP_DEPLOYMENT_EXPOSURE: "private"
       PAPERCLIP_AGENT_JWT_SECRET: "${SERVICE_PASSWORD_64_AGENTJWT}"
+      PAPERCLIP_AUTH_BASE_URL_MODE: "auto"
       # ANTHROPIC_API_KEY: "${ANTHROPIC_API_KEY:?}"
       TS_AUTHKEY: "${TS_AUTHKEY:-}"
       TS_HOSTNAME: "${TS_HOSTNAME:-paperclip}"
       TS_EXTRA_ARGS: "${TS_EXTRA_ARGS:-}"
-      SERVICE_FQDN_SERVER_3100:
-    ports:
-      - "3100"
+      TS_SERVE_PORT: "${TS_SERVE_PORT:-3100}"
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:3100/api/health"]
       interval: 30s
