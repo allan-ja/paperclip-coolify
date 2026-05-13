@@ -26,4 +26,39 @@ if [ "$changed" = "1" ]; then
     chown -R node:node /paperclip
 fi
 
+# Start tailscale (userspace networking) if TS_AUTHKEY provided.
+# Enables Tailscale SSH so operators can `ssh node@<tailnet-host>` into this container.
+if [ -n "$TS_AUTHKEY" ]; then
+    mkdir -p /var/lib/tailscale /var/run/tailscale
+    echo "Starting tailscaled (userspace networking)"
+    tailscaled \
+        --state=/var/lib/tailscale/tailscaled.state \
+        --socket=/var/run/tailscale/tailscaled.sock \
+        --tun=userspace-networking \
+        >/var/log/tailscaled.log 2>&1 &
+
+    # Wait for tailscaled socket to become ready
+    i=0
+    until tailscale --socket=/var/run/tailscale/tailscaled.sock status >/dev/null 2>&1; do
+        i=$((i + 1))
+        if [ "$i" -gt 30 ]; then
+            echo "tailscaled failed to start within 15s; continuing without tailscale" >&2
+            break
+        fi
+        sleep 0.5
+    done
+
+    if tailscale --socket=/var/run/tailscale/tailscaled.sock status >/dev/null 2>&1; then
+        TS_HOSTNAME=${TS_HOSTNAME:-paperclip}
+        echo "Bringing up tailscale (hostname=$TS_HOSTNAME, ssh enabled)"
+        tailscale --socket=/var/run/tailscale/tailscaled.sock up \
+            --ssh \
+            --authkey="$TS_AUTHKEY" \
+            --hostname="$TS_HOSTNAME" \
+            ${TS_EXTRA_ARGS:-} || echo "tailscale up failed; continuing" >&2
+    fi
+else
+    echo "TS_AUTHKEY not set; skipping tailscale startup"
+fi
+
 exec gosu node "$@"
