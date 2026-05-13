@@ -71,4 +71,15 @@ else
     echo "TS_AUTHKEY not set; skipping tailscale startup"
 fi
 
+if [ "${SYNCTHING_ENABLE:-0}" = "1" ]; then
+    mkdir -p /paperclip/.syncthing
+    chown -R node:node /paperclip/.syncthing
+    echo "Starting syncthing"
+    gosu node syncthing serve \
+        --home=/paperclip/.syncthing \
+        --gui-address="${SYNCTHING_GUI_ADDR:-127.0.0.1:8384}" \
+        --no-browser --no-restart \
+        >/var/log/syncthing.log 2>&1 &
+fi
+
 exec gosu node "$@"

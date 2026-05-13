@@ -46,6 +46,12 @@ services:
       TS_HOSTNAME: "${TS_HOSTNAME:-paperclip}"
       TS_EXTRA_ARGS: "${TS_EXTRA_ARGS:-}"
       TS_SERVE_PORT: "${TS_SERVE_PORT:-3100}"
+      SYNCTHING_ENABLE: "${SYNCTHING_ENABLE:-0}"
+      SYNCTHING_GUI_ADDR: "${SYNCTHING_GUI_ADDR:-127.0.0.1:8384}"
+    ports:
+      - "22000:22000/tcp"
+      - "22000:22000/udp"
+      - "21027:21027/udp"
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:3100/api/health"]
       interval: 30s
